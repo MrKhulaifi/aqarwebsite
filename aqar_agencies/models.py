@@ -5,7 +5,7 @@ from django.db.models.deletion import CASCADE
 class Agency(models.Model):
     name = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=10)
-    profile_picture = models.ImageField(upload_to="", null=True)
+    profile_picture = models.ImageField(upload_to="profile_picture", null=True)
     email = models.EmailField()
     address = models.TextField(max_length=200)
     verification = models.BooleanField(default=False)
@@ -26,16 +26,18 @@ class AgencyMember(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+class Area(models.Model):
+    name = models.CharField(max_length=50)
+
 class Post(models.Model):
-    agency= models.ForeignKey(Agency, on_delete=CASCADE)
+    agency = models.ForeignKey(Agency, on_delete=CASCADE)
     title = models.CharField(max_length=200)
     body = models.TextField(max_length=400, blank=False)
-    picture = models.ImageField(upload_to="", null=True)
-    area = models.CharField(max_length=20) #model
+    picture = models.ImageField(upload_to="posts", null=True)
+    area = models.ForeignKey(Area, on_delete=CASCADE)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
 
 class Comment(models.Model):
     post = models.ForeignKey(Post, on_delete=CASCADE)
