@@ -2,24 +2,28 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from .models import Agency, AgencyMember, Area, Post, Comment
-
-
-class UserTest(TestCase):
-    def create_user(self):
-        return User.objects.create()
-
-    def test_user_creation(self):
-        user = self.create_user()
-        self.assertTrue(isinstance(user, User))
-
+from django.core.exceptions import ValidationError
 
 class AgencyTest(TestCase):
-    def create_agency(self):
-        return Agency.objects.create()
+
+    def setUp(self):
+        self.member = User.objects.create(username="alkhulaifi")
 
     def test_agency_creation(self):
-        agency = self.create_agency()
-        self.assertTrue(isinstance(agency, Agency))
+        agency = Agency.objects.new(self.member, name="عقار بوحسين", phone_number="99025455")
+        self.assertEqual(agency.phone_number, "99025455")
+        self.assertIn(self.member,agency.members.all())
+    
+    def test_agency_creation_bad_phone_number(self):
+        with self.assertRaises(ValidationError):
+            Agency.objects.new(self.member, name="عقار بوحسين", phone_number="888")
+
+    def test_agency_creation_bad_email(self):
+        with self.assertRaises(ValidationError):
+            Agency.objects.new(self.member, name="عقار بوحسين", email="888")
+
+    def test_agency_creation_good_email(self):
+        Agency.objects.new(self.member, name="عقار بوحسين", email="add@bdd.com")
 
 
 class AgencyMemberTest(TestCase):
