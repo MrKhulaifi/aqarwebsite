@@ -20,7 +20,7 @@ class AgencyManager(models.Manager):
             email_validator(email)
 
         agency = self.create(**kwargs)
-
+        # agency.add_member(user, is_admin= True)
         AgencyMember.objects.create(agency=agency, member=user, is_admin= True)
         
         return agency
@@ -47,6 +47,9 @@ class Agency(models.Model):
         self.save()
 
     def add_post(self, user, **kwargs):
+        pass
+
+    def add_member(self, user, is_admin= False):
         pass
 
 class AgencyMember(models.Model):
