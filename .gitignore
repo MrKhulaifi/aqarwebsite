@@ -42,6 +42,9 @@ media
 # IntelliJ
 out/
 
+#venv
+aqar_env/
+
 # JIRA plugin
 atlassian-ide-plugin.xml
 
