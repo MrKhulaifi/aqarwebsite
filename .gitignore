@@ -138,3 +138,8 @@ GitHub.sublime-settings
 !.vscode/launch.json 
 !.vscode/extensions.json 
 .history
+
+# Ali's setup #
+git commands.txt
+.vscode
+db.sqlite3
