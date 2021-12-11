@@ -43,20 +43,23 @@ class AgencyManager(models.Manager):
 
 class Agency(models.Model):
     name = models.CharField(max_length=100,blank=False)
-    phone_number = models.CharField(max_length=8)
-    profile_picture = models.ImageField(upload_to="profile_picture", null=True)
-    email = models.EmailField()
-    address = models.TextField(max_length=200)
-    verification = models.ForeignKey(User, null=True, on_delete=SET_NULL, related_name="verified")
-    twitter = models.CharField(max_length=50)
-    instagram = models.CharField(max_length=50)
+    phone_number = models.CharField(max_length=8, blank=True)
+    profile_picture = models.ImageField(upload_to="profile_picture", null=True, blank=True)
+    email = models.EmailField(blank=True)
+    address = models.TextField(max_length=200, blank=True)
+    verification = models.ForeignKey(User, null=True, blank=True, on_delete=SET_NULL, related_name="verified")
+    twitter = models.CharField(max_length=50, blank=True)
+    instagram = models.CharField(max_length=50, blank=True)
 
     members = models.ManyToManyField(User, through='AgencyMember')
-
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     objects = AgencyManager()
+
+    class Meta:
+        verbose_name_plural = "agencies"
 
     def verified_by(self, user):
         if self.verification is not None:
