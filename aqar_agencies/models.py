@@ -7,7 +7,7 @@ from django.core.validators import EmailValidator, MaxLengthValidator, MinLength
 class AgencyManager(models.Manager):
     def new(self, user, **kwargs):
         name = kwargs.get("name")
-        if name is None:
+        if not name:
             raise ValidationError("Please enter a name for the Agency.")
         name_min_validator = MinLengthValidator(10)
         name_min_validator(name)
@@ -15,22 +15,22 @@ class AgencyManager(models.Manager):
         name_max_validator(name)
 
         phone_number = kwargs.get("phone_number")
-        if phone_number is not None and not str(phone_number).isnumeric():
-            raise ValidationError("Please enter a phone number")
+        if phone_number and not str(phone_number).isnumeric():
+            raise ValidationError("Please enter a valid phone number")
         if phone_number is not None and len(phone_number) != 8:
             raise ValidationError("Phone number should be 8 numbers")
 
         profile_picture = kwargs.get("profile_picture")
-        if profile_picture is not None:
+        if profile_picture:
             validate_image_file_extension(profile_picture)
 
         email = kwargs.get("email")
-        if email is not None:
+        if email:
             email_validator = EmailValidator("Should have a valid email")
             email_validator(email)
 
         address = kwargs.get("address")
-        if address is not None:
+        if address:
             address_min_validator = MinLengthValidator(30)
             address_min_validator(address)
             address_max_validator = MaxLengthValidator(200)
@@ -61,6 +61,14 @@ class Agency(models.Model):
     class Meta:
         verbose_name_plural = "agencies"
 
+    def clean(self, *args, **kwargs):
+        # Do something
+        super().clean(*args, **kwargs)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
     def verified_by(self, user):
         if self.verification is not None:
             raise ValidationError("Agency has already been verified")
@@ -79,6 +87,9 @@ class Agency(models.Model):
     def add_member(self, user, is_admin):
         AgencyMember.objects.create(agency=self, member=user, is_admin=is_admin)
 
+    def __str__(self):
+        return self.name
+
 class AgencyMember(models.Model):
     agency = models.ForeignKey(Agency, on_delete=CASCADE)
     member = models.ForeignKey(User, on_delete=CASCADE)
@@ -87,6 +98,9 @@ class AgencyMember(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.member} from {self.agency} agency"
 
 class AreaManager(models.Manager):
     def new(self, **kwargs):
@@ -109,6 +123,9 @@ class Area(models.Model):
     name = models.CharField(max_length=50)
 
     objects = AreaManager()
+
+    def __str__(self):
+        return f"{self.area}"
 
 class PostManager(models.Manager):
     def new(self, **kwargs):
@@ -147,6 +164,10 @@ class Post(models.Model):
     def add_comment(self, user, message):
         pass
 
+    def __str__(self):
+        title_abbreviation = self.title[:10]
+        return f"{title_abbreviation}... posted on {self.created_at} by {self.agency}"
+
 class CommentManager(models.Manager):
     def new(self, **kwargs):
         message = kwargs.get("message")
@@ -168,3 +189,7 @@ class Comment(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     objects = CommentManager()
+
+    def __str__(self):
+        message_abbreviation = self.message[:10]
+        return f"{message_abbreviation}... posted on {self.created_at} by {self.agency}"

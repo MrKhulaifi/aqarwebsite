@@ -1,7 +1,9 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import authenticate, login
-from .forms import AgencyForm
+from .forms import AgencyCreateForm
+from django.contrib.auth.models import User
+from .models import Agency
 
 def index(request):
     return render(request, 'aqar_agencies/index.html')
@@ -19,16 +21,29 @@ def register(request):
             return redirect('index')
     else:
         form = UserCreationForm()
-    context = {"form": form}
+    context = {'form': form}
     return render(request, "registration/register.html", context)
 
-def create_agency(request):
+def agency_create(request):
     if request.method == 'POST':
-        agency_form = AgencyForm(request.POST, request.FILES)
-
+        agency_form = AgencyCreateForm(request.POST, request.FILES)
+        print("BEFORE VALIDATION", request.FILES.get('profile_picture'), type(request.FILES.get('profile_picture')))
         if agency_form.is_valid():
-            agency_form.save(commit=False)
-        return redirect('index')
-    agency_form = AgencyForm()
-    context = {"agency_form": agency_form}
-    return render(request, "aqar_agencies/create_agency.html", context)
+            print("AFTER VALIDATION", request.FILES.get('profile_picture'), type(request.FILES.get('profile_picture')))
+            agency_fields = agency_form.cleaned_data
+            member = User.objects.get(username=request.user)
+            Agency.objects.create(
+                name=agency_fields['name'],
+                phone_number=agency_fields['phone_number'],
+                profile_picture=agency_fields['profile_picture'],
+                email=agency_fields['email'],
+                address=agency_fields['address'],
+                twitter=agency_fields['twitter'],
+                instagram=agency_fields['instagram'],
+            )
+            return redirect('index')
+        else:
+            print("FORM NOT VALID")
+    agency_form = AgencyCreateForm()
+    context = {'agency_form': agency_form}
+    return render(request, "aqar_agencies/agency_create.html", context)
