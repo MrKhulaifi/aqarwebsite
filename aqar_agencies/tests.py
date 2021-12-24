@@ -390,6 +390,7 @@ class AuthViewsTests(TestCase):
 
 
 class AgencyCreateViewTest(TestCase):
+    
     def setUp(self):
         self.client.post(reverse("register"), {
             "username": "alkhulaifi",
@@ -397,6 +398,14 @@ class AgencyCreateViewTest(TestCase):
             "password2": "Open4khulaifi"})
         self.upload_file = open(
             "/Users/alialkhelaifi/Google_Drive/Projects/aqarwebsite/static/images/test.jpeg", 'rb')
+
+    def test_agency_view_logged_out(self):
+        """Tests that the user cannot see the agency create page without logging in"""
+        self.client.logout()
+        get_response = self.client.get(reverse('agency_create'))
+
+        self.assertContains(get_response, "You are not logged in. Please log in to be able to create an agency")
+        
 
     def test_agency_create_view(self):
         """Tests that the view does create and validate an agency instance 
@@ -444,7 +453,7 @@ class AgencyCreateViewTest(TestCase):
         agency = Agency.objects.get(name="Ali's agency")
 
         self.assertEqual(agency.phone_number, "98821030")
-        # self.assertEqual(agency.profile_picture, profile_picture)
+        self.assertEqual(agency.profile_picture.size, profile_picture.size)
         self.assertEqual(agency.email, "alkhelaifi.ali@gmail.com")
         self.assertEqual(agency.address, "Qurtuba, Block4, Street1, House91")
         self.assertEqual(agency.twitter, "@alkhulaifi")
@@ -453,6 +462,38 @@ class AgencyCreateViewTest(TestCase):
         self.assertRedirects(post_response, reverse('index'))
 
         mydir = "uploads/profile_picture"
-        for photo in os.listdir(mydir)[::-1]:
+        for photo in os.listdir(mydir):
             os.remove(os.path.join(mydir, photo)) # Delete all generated photos
+        
+
+class AgencyProfileViewTest(TestCase):
+    def setUp(self):
+        self.client.post(reverse("register"), {
+            "username": "alkhulaifi",
+            "password1": "Open4khulaifi",
+            "password2": "Open4khulaifi"})
+        self.upload_file = open(
+            "/Users/alialkhelaifi/Google_Drive/Projects/aqarwebsite/static/images/test.jpeg", 'rb')
+        profile_picture = SimpleUploadedFile(self.upload_file.name, self.upload_file.read())
+        self.client.post(reverse('agency_create'), {
+                'name': "Ali's agency",
+                'phone_number': "98821030",
+                'email': "alkhelaifi.ali@gmail.com",
+                'profile_picture': profile_picture,
+                'address': "Qurtuba, Block4, Street1, House91",
+                'twitter': "@alkhulaifi",
+                'instagram': "ali.i.alkhulaifi"
+            })
+
+    def test_agency_profile(self):
+        pass
+
+    def test_agency_profile_without_logging_in(self):
+        pass
+
+    def test_agency_profile_from_nonmember_user(self):
+        pass
+
+    def test_agency_profile_from_multiple_members(self):
+        pass
         

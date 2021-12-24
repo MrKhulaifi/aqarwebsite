@@ -27,12 +27,10 @@ def register(request):
 def agency_create(request):
     if request.method == 'POST':
         agency_form = AgencyCreateForm(request.POST, request.FILES)
-        print("BEFORE VALIDATION", request.FILES.get('profile_picture'), type(request.FILES.get('profile_picture')))
         if agency_form.is_valid():
-            print("AFTER VALIDATION", request.FILES.get('profile_picture'), type(request.FILES.get('profile_picture')))
             agency_fields = agency_form.cleaned_data
             member = User.objects.get(username=request.user)
-            Agency.objects.create(
+            Agency.objects.new(member,
                 name=agency_fields['name'],
                 phone_number=agency_fields['phone_number'],
                 profile_picture=agency_fields['profile_picture'],
@@ -42,8 +40,6 @@ def agency_create(request):
                 instagram=agency_fields['instagram'],
             )
             return redirect('index')
-        else:
-            print("FORM NOT VALID")
     agency_form = AgencyCreateForm()
     context = {'agency_form': agency_form}
     return render(request, "aqar_agencies/agency_create.html", context)
