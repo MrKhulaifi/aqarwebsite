@@ -10,7 +10,7 @@
     {% if user.is_authenticated %}
         <h1>Create an Agency for {{ user }}:</h1>
 
-        <form method="post" action="{% url "create_agency" %}" enctype="multipart/form-data">
+        <form method="post" action="{% url "agency_create" %}" enctype="multipart/form-data">
             {% csrf_token %}
             {% if agency_form.errors %}
                 <p>There are errors in the form!</p>
