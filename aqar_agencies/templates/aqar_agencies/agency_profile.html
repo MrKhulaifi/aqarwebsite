@@ -1,14 +1,13 @@
 {% extends 'base.html' %}
 
 {% block title %}
-    The Index
+    Agency Profile
 {% endblock title %}
 
 {% block content %}
-    <h1>This is the index page!</h1>
     {% if user.is_authenticated %}
-        <h2>Your name is: {{ user.username }}</h2>
+        User's Agencies here
     {% else %}
-        <h2>You are not logged in.</h2>
+        <h2>You are not logged in. Please log in to be able to create an agency</h2>
     {% endif %}
 {% endblock content %}

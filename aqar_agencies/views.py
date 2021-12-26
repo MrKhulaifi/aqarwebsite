@@ -43,3 +43,6 @@ def agency_create(request):
     agency_form = AgencyCreateForm()
     context = {'agency_form': agency_form}
     return render(request, "aqar_agencies/agency_create.html", context)
+
+def agency_profile(request):
+    pass
