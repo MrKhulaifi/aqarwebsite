@@ -4,12 +4,19 @@ from django.urls import reverse
 from django.contrib import auth
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
+
+from aqar_agencies.views import agency_choice
 from .models import Agency, AgencyMember, Area, Post, Comment
-from .forms import AgencyCreateForm
+from .forms import AgencyCreateForm, AgencyChoiceForm
 from django.core.exceptions import ValidationError
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import authenticate
 from io import BytesIO
+
+def delete_test_images(dir):
+    """Deletes all photos in the specified path"""
+    for photo in os.listdir(dir):
+        os.remove(os.path.join(dir, photo)) # Delete all generated photos
 
 
 class AgencyModelTests(TestCase):
@@ -56,9 +63,7 @@ class AgencyModelTests(TestCase):
             name="عقار بوحسين",
             profile_picture=SimpleUploadedFile(name='test_image.jpg', content=b'', content_type='image/jpeg')
             )
-        mydir = "uploads/profile_picture"
-        for photo in os.listdir(mydir):
-            os.remove(os.path.join(mydir, photo)) # Delete all generated photos
+        delete_test_images("uploads/profile_picture")
 
     def test_agency_bad_profile_picture(self):
         """An agency creation with a photo that has the wrong file extension will raise an error"""
@@ -204,17 +209,13 @@ class PostModelTests(TestCase):
     def test_post_good_post_picture(self):
         Post.objects.new(agency=self.agency, area=self.area, title="Best Sale", body="This Sale is Great", 
             picture=SimpleUploadedFile(name='test_image.jpg', content=b'', content_type='image/jpeg'))
-        mydir = "uploads/posts"
-        for photo in os.listdir(mydir):
-            os.remove(os.path.join(mydir, photo)) # Delete all generated photos
+        delete_test_images("uploads/posts")
 
     def test_post_bad_post_picture(self):
         with self.assertRaises(ValidationError):
             Post.objects.new(agency=self.agency, area=self.area, title="Best Sale", body="This Sale is Great", 
                 picture=SimpleUploadedFile(name="test.txt", content=b"test", content_type='text/txt'))
-        mydir = "uploads/posts"
-        for photo in os.listdir(mydir):
-            os.remove(os.path.join(mydir, photo)) # Delete all generated photos
+        delete_test_images("uploads/posts")
 
 
 class CommentModelTests(TestCase):
@@ -406,7 +407,6 @@ class AgencyCreateViewTest(TestCase):
 
         self.assertContains(get_response, "You are not logged in. Please log in to be able to create an agency")
         
-
     def test_agency_create_view(self):
         """Tests that the view does create and validate an agency instance 
         using the AgencyManager's new() method in the database"""
@@ -428,7 +428,7 @@ class AgencyCreateViewTest(TestCase):
                 'phone_number': "9881030"
             })
     
-    def test_agency_create_form_imagefield(self):
+    def test_learning_agency_create_form_imagefield(self):
         text_data = {'name': "Ali's Agency"}
         file_data = {'profile_picture': 
             SimpleUploadedFile(self.upload_file.name, self.upload_file.read())}
@@ -461,9 +461,103 @@ class AgencyCreateViewTest(TestCase):
         self.assertEqual(agency.members.all()[0].username, "alkhulaifi")
         self.assertRedirects(post_response, reverse('index'))
 
-        mydir = "uploads/profile_picture"
-        for photo in os.listdir(mydir):
-            os.remove(os.path.join(mydir, photo)) # Delete all generated photos
+        delete_test_images("uploads/profile_picture")
+        
+
+class AgencyChoiceViewTest(TestCase):
+    def setUp(self):
+        self.client.post(reverse("register"), {
+            "username": "alkhulaifi",
+            "password1": "Open4khulaifi",
+            "password2": "Open4khulaifi"})
+
+    def test_agency_choice_if_logged_out(self):
+        self.client.logout()
+        get_response = self.client.get(reverse("agency_choice"))
+
+        self.assertContains(get_response, 
+            "You are not logged in. Please log in to be able to create an agency")
+
+    def test_agency_choice_accessing_agencies_through_users(self):
+        user = auth.get_user(self.client)
+        members = AgencyMember.objects.filter(member=user)
+
+        self.assertFalse(members)
+
+        post_response = self.client.post(reverse('agency_create'), {
+            'name': "Ali's agency",
+            'phone_number': "98821030"
+        })
+        members = AgencyMember.objects.filter(member=user)
+
+        self.assertTrue(members)
+    
+    def test_agency_choice_if_user_has_no_agency(self):
+        get_response = self.client.get(reverse("agency_choice"))
+
+        self.assertContains(get_response, 
+            "You are not a member of any agency.")
+    
+    def test_agency_choice_if_user_has_one_agency(self):
+        self.client.post(reverse('agency_create'), {
+            'name': "Ali's agency",
+            'phone_number': "98821030"
+        })
+        get_response = self.client.get(reverse("agency_choice"))
+
+        self.assertRedirects(get_response, reverse("agency_profile"))
+
+    def test_learning_to_filter_agency_by_user(self):
+        user = auth.get_user(self.client)
+        self.client.post(reverse("register"), {
+            "username": "alkhulaifi2",
+            "password1": "Open4khulaifi",
+            "password2": "Open4khulaifi"})
+        user2 = auth.get_user(self.client)
+        user1_agency1 = Agency.objects.new(user, name="alkhulaifi agency1")
+        user2_agency1 = Agency.objects.new(user2, name="alkhulaifi2 agency1")
+        user2_agency2 = Agency.objects.new(user2, name="alkhulaifi2 agency2")
+        user1_agency2 = Agency.objects.new(user, name="alkhulaifi agency2")
+        user1_agency3 = Agency.objects.new(user, name="alkhulaifi agency3")
+
+        self.assertEqual(user, User.objects.filter(username="alkhulaifi").first())
+        self.assertEqual(user1_agency1, AgencyMember.objects.filter(member=user)[0].agency)
+        self.assertEqual(user1_agency2, AgencyMember.objects.filter(member=user)[1].agency)
+        self.assertEqual(user1_agency3, AgencyMember.objects.filter(member=user)[2].agency)
+        self.assertEqual(user2_agency1, AgencyMember.objects.filter(member=user2)[0].agency)
+        self.assertEqual(user2_agency2, AgencyMember.objects.filter(member=user2)[1].agency)
+
+    def test_learning_model_choice_field_get_response(self):
+        user = auth.get_user(self.client)
+        user_agency1 = Agency.objects.new(user, name="alkhulaifi agency1")
+        user_agency2 = Agency.objects.new(user, name="alkhulaifi agency2")
+        user_agency3 = Agency.objects.new(user, name="alkhulaifi agency3")
+        agency_memberships = AgencyMember.objects.filter(member=user)
+        number_of_memberships = len(agency_memberships)
+
+        form = AgencyChoiceForm(agency_memberships=agency_memberships)
+        context = {
+            "agency_memberships": agency_memberships,
+            "number_of_memberships": number_of_memberships,
+            "form": form,
+        }
+        get_response = self.client.get(reverse("agency_choice"), context)
+
+        self.assertContains(get_response, "alkhulaifi agency1")
+
+    # def test_agency_choice_if_user_has_multiple_agencies(self):
+    #     self.client.post(reverse('agency_create'), {
+    #         'name': "Ali's agency",
+    #         'phone_number': "98821030"
+    #     })
+    #     self.client.post(reverse('agency_create'), {
+    #         'name': "Yousef's agency",
+    #         'phone_number': "98888888"
+    #     })
+    #     self.client.post(reverse('agency_create'), {
+    #         'name': "Abdulla's agency",
+    #         'phone_number': "98882288"
+    #     })
         
 
 class AgencyProfileViewTest(TestCase):
@@ -484,16 +578,20 @@ class AgencyProfileViewTest(TestCase):
                 'twitter': "@alkhulaifi",
                 'instagram': "ali.i.alkhulaifi"
             })
-
-    def test_agency_profile(self):
-        pass
+        delete_test_images("uploads/profile_picture")
 
     def test_agency_profile_without_logging_in(self):
-        pass
+        self.client.logout()
+        get_response = self.client.get(reverse("agency_profile"))
 
-    def test_agency_profile_from_nonmember_user(self):
-        pass
+        self.assertContains(get_response, 
+            "You are not logged in. Please log in to be able to create an agency")
 
-    def test_agency_profile_from_multiple_members(self):
+    # def test_agency_profile(self):
+    #     get_response = self.client.get(reverse("agency_profile"))
+
+    #     self.assertContains(get_response, "Ali's agency")
+
+    def test_agency_profile_member_has_multiple_agencies(self):
         pass
         

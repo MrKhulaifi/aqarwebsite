@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %}Agency Choice{% endblock title %}
+
+{% block content %}
+    {% if user.is_authenticated %}
+        {% if number_of_memberships == 0 %}
+            <h2>
+                You are not a member of any agency.
+                You will be redirected to the index page in 5 seconds.
+            </h2>
+            <script>
+                function redirect(){window.location.href = "/";}
+                setTimeout(redirect, 5000);
+            </script>
+        {% else %}
+            <form method="post" action="{% url 'agency_profile' %}">
+                {% csrf_token %}
+                <p>{{ form }}</p>
+                <p><input type="submit" value="Choose"></p>
+            </form>
+        {% endif %}
+    {% else %}
+        <h2>You are not logged in. Please log in to be able to create an agency</h2>
+        <h2>You will be redirected to the login page in 5 seconds</h2>
+        <script>
+            function redirect(){window.location.href = "/";}
+            setTimeout(redirect, 5000);
+        </script>
+    {% endif %}
+{% endblock content %}

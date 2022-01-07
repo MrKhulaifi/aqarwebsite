@@ -12,3 +12,5 @@ admin.site.register(Comment)
 # Register your models here.
 # superuser: mrkhulaifi, password: open4khulaifi
 # user logout url: http://127.0.0.1:8000/accounts/logout
+# user2: UserNoAgencies, password: Open4agag
+# user2: UserOneAgency, password: Open4agag

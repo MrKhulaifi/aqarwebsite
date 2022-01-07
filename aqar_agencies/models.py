@@ -4,6 +4,7 @@ from django.db.models.deletion import CASCADE, SET_NULL
 from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator, MaxLengthValidator, MinLengthValidator, validate_image_file_extension
 
+
 class AgencyManager(models.Manager):
     def new(self, user, **kwargs):
         name = kwargs.get("name")
@@ -15,10 +16,11 @@ class AgencyManager(models.Manager):
         name_max_validator(name)
 
         phone_number = kwargs.get("phone_number")
-        if phone_number and not str(phone_number).isnumeric():
-            raise ValidationError("Please enter a valid phone number")
-        if phone_number is not None and len(phone_number) != 8:
-            raise ValidationError("Phone number should be 8 numbers")
+        if phone_number:
+            if phone_number and not str(phone_number).isnumeric():
+                raise ValidationError("Please enter a valid phone number")
+            if phone_number is not None and len(phone_number) != 8:
+                raise ValidationError("Phone number should be 8 numbers")
 
         profile_picture = kwargs.get("profile_picture")
         if profile_picture:
@@ -40,6 +42,7 @@ class AgencyManager(models.Manager):
         agency.add_member(user, is_admin=True)
         
         return agency
+
 
 class Agency(models.Model):
     name = models.CharField(max_length=100,blank=False)
@@ -90,6 +93,7 @@ class Agency(models.Model):
     def __str__(self):
         return self.name
 
+
 class AgencyMember(models.Model):
     agency = models.ForeignKey(Agency, on_delete=CASCADE)
     member = models.ForeignKey(User, on_delete=CASCADE)
@@ -100,7 +104,11 @@ class AgencyMember(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.member} from {self.agency} agency"
+        return self.agency.name
+
+    class Meta:
+        verbose_name_plural = "agencies"
+
 
 class AreaManager(models.Manager):
     def new(self, **kwargs):
@@ -127,6 +135,7 @@ class Area(models.Model):
     def __str__(self):
         return f"{self.area}"
 
+
 class PostManager(models.Manager):
     def new(self, **kwargs):
         title = kwargs.get("title")
@@ -149,6 +158,7 @@ class PostManager(models.Manager):
 
         return post
 
+
 class Post(models.Model):
     agency = models.ForeignKey(Agency, on_delete=CASCADE, related_name="posts")
     area = models.ForeignKey(Area, on_delete=CASCADE)
@@ -168,6 +178,7 @@ class Post(models.Model):
         title_abbreviation = self.title[:10]
         return f"{title_abbreviation}... posted on {self.created_at} by {self.agency}"
 
+
 class CommentManager(models.Manager):
     def new(self, **kwargs):
         message = kwargs.get("message")
@@ -179,6 +190,7 @@ class CommentManager(models.Manager):
         comment = self.create(**kwargs)
 
         return comment
+
 
 class Comment(models.Model):
     post = models.ForeignKey(Post, on_delete=CASCADE, related_name="comments")

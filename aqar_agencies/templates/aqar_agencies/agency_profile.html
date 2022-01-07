@@ -6,8 +6,16 @@
 
 {% block content %}
     {% if user.is_authenticated %}
-        User's Agencies here
+        <h2>Agency Details:</h2>
+        {{ name }}
     {% else %}
-        <h2>You are not logged in. Please log in to be able to create an agency</h2>
+        <h2>
+            You are not logged in. Please log in to be able to create an agency
+            You will be redirected to the index page in 5 seconds.
+        </h2>
+        <script>
+            function redirect(){window.location.href = "/";}
+            setTimeout(redirect, 5000);
+        </script>
     {% endif %}
 {% endblock content %}

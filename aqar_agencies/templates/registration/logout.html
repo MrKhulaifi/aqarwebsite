@@ -6,4 +6,8 @@
 
 {% block content %}
     <h1>You have logged out from Aqar Website</h1>
+    <script>
+        function redirect(){window.location.href = "/";}
+        setTimeout(redirect, 2000);
+    </script>
 {% endblock content %}
